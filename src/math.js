@@ -7,6 +7,10 @@ export const subtract = (a, b) => {
   return a - b;
 };
 
+export const multiply = (a, b) => {
+  return a * b;
+};
+
 // Example usage
 const result = add(5, 3);
 console.log(`5 + 3 = ${result}`);
