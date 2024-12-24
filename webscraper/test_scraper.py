@@ -2,8 +2,36 @@ import logging
 import json
 import time
 import argparse
+import re
+import datetime
 from webscraper.scraper import WebScraper
 from convert_to_csv import convert_json_to_csv
+
+def url_to_filename(url: str) -> str:
+    """
+    Convert a URL into a filename-friendly string by extracting state and city.
+    
+    Args:
+        url (str): URL to convert (e.g., https://www.commtrex.com/transloading/ga/atlanta.html)
+    
+    Returns:
+        str: Filename-friendly string (e.g., ga_atlanta_20240124_153000)
+    """
+    # Extract the portion after .../transloading/ (e.g., ga/atlanta.html)
+    match = re.search(r'/transloading/([^/]+)/([^/]+)\.html', url)
+    if match:
+        state = match.group(1)
+        city = match.group(2)
+        # Remove any non-alphanumeric characters just in case
+        state = re.sub(r'[^a-zA-Z0-9_-]+', '', state)
+        city = re.sub(r'[^a-zA-Z0-9_-]+', '', city)
+        # Build a filename base, add a timestamp
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        return f"{state}_{city}_{timestamp}"
+    else:
+        # Fallback if not matching, just use a timestamp
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        return f"unknown_{timestamp}"
 
 # Configure logging
 logging.basicConfig(
@@ -96,8 +124,14 @@ if __name__ == '__main__':
     
     success_count = 0
     for idx, url in enumerate(args.url, 1):
-        output_base = f"{args.output}_{idx}" if len(args.url) > 1 else args.output
-        if scrape_url(url, output_base, args.test_mode, args.retry_count, args.protection_strategy):
+        custom_filename = url_to_filename(url)
+        if len(args.url) > 1:
+            # If multiple URLs, use just the custom filename
+            final_name = custom_filename
+        else:
+            # For single URL, use custom filename
+            final_name = custom_filename
+        if scrape_url(url, final_name, args.test_mode, args.retry_count, args.protection_strategy):
             success_count += 1
     
     logger.info(f"Completed scraping {success_count}/{len(args.url)} URLs successfully")
