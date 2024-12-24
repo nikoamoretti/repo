@@ -119,19 +119,29 @@ class WebScraper:
             if any(text in content for text in ["Just a moment", "Please wait", "DDoS protection"]):
                 self.logger.debug("Protection detected, implementing advanced bypass...")
                 
-                # Multiple retry attempts
-                for attempt in range(3):
+                # Multiple retry attempts with progressive backoff
+                max_retries = 3  # Keep max retries at 3 to stay under 30s total runtime
+                for attempt in range(max_retries):
                     self.logger.debug(f"Bypass attempt {attempt + 1}")
                     
-                    # Wait for challenge to complete and content to load
-                    if wait_for_real_content():
-                        self.logger.debug("Successfully bypassed protection")
-                        break
-                    
-                    # If still on challenge page, try refreshing
-                    if attempt < 2:  # Don't refresh on last attempt
-                        self.logger.debug("Refreshing page...")
-                        page.reload(wait_until='networkidle')
+                    # Check if protection is still active
+                    content = page.content()
+                    if any(text in content for text in ["Just a moment", "Please wait", "DDoS protection"]):
+                        # Wait for challenge to complete and content to load
+                        if wait_for_real_content():
+                            self.logger.debug("Successfully bypassed protection")
+                            break
+                        
+                        # Progressive backoff delay only if protection is detected
+                        if attempt < max_retries - 1:  # Don't delay on last attempt
+                            delay = min(2 ** attempt, 8)  # Cap delay at 8 seconds
+                            self.logger.debug(f"Waiting {delay} seconds before next attempt...")
+                            time.sleep(delay)
+                            self.logger.debug("Refreshing page...")
+                            page.reload(wait_until='networkidle')
+                    else:
+                        self.logger.debug("No protection detected, continuing...")
+                        break  # Exit retry loop if no protection is detected
                 
                 # Final verification
                 page.wait_for_load_state('networkidle', timeout=5000)
