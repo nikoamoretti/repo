@@ -26,11 +26,13 @@ class CloudflareMiddleware(UserAgentMiddleware):
         params = {
             'api_key': self.scraper_api_key,
             'url': original_url,
-            'render_js': '1'
+            'render_js': '1',
+            'country_code': 'us'  # Add country code for better routing
         }
         
-        # Create new request to ScraperAPI
-        api_url = f"http://api.scraperapi.com/?{urlencode(params)}"
+        # Create new request to ScraperAPI using HTTPS
+        api_url = f"https://api.scraperapi.com/?{urlencode(params)}"
+        self.logger.debug(f"Using ScraperAPI endpoint (key length: {len(self.scraper_api_key)})")
         
         # Update the request
         request._set_url(api_url)
