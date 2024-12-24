@@ -3,6 +3,7 @@ import json
 import time
 import argparse
 import re
+import random
 from webscraper.scraper import WebScraper
 from convert_to_csv import convert_json_to_csv
 
@@ -31,11 +32,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def scrape_url(url, output_base='output'):
+def scrape_url(scraper, url, output_base='output'):
     """
     Scrape a single URL and save the results to JSON and CSV files.
     
     Args:
+        scraper (WebScraper): WebScraper instance to use
         url (str): URL to scrape
         output_base (str): Base name for output files (without extension)
     """
@@ -43,7 +45,6 @@ def scrape_url(url, output_base='output'):
     logger.info(f"Processing URL: {url}")
     
     try:
-        scraper = WebScraper()
         result = scraper.scrape_url(url)
         
         if result:
@@ -84,7 +85,6 @@ def scrape_url(url, output_base='output'):
         logger.error(f"Failed to scrape {url}: {str(e)}")
         return False
     finally:
-        scraper.close()
         logger.info(f"Total test time: {time.time() - start_time:.2f} seconds")
 
 if __name__ == '__main__':
@@ -94,9 +94,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     success_count = 0
-    for url in args.url:
-        output_base = generate_filename_from_url(url)
-        if scrape_url(url, output_base):
-            success_count += 1
-    
-    logger.info(f"Completed scraping {success_count}/{len(args.url)} URLs successfully")
+    scraper = WebScraper()
+    try:
+        for url in args.url:
+            output_base = generate_filename_from_url(url)
+            if scrape_url(scraper, url, output_base):
+                success_count += 1
+            # Add delay between URLs to prevent rate limiting
+            if len(args.url) > 1:  # Only sleep if there are multiple URLs
+                delay = random.randint(2, 5)
+                logger.info(f"Adding delay of {delay} seconds between URLs...")
+                time.sleep(delay)
+                logger.info("Delay completed, proceeding to next URL...")
+    finally:
+        scraper.close()
+        logger.info(f"Completed scraping {success_count}/{len(args.url)} URLs successfully")
