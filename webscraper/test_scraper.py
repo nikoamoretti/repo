@@ -2,8 +2,27 @@ import logging
 import json
 import time
 import argparse
+import re
 from webscraper.scraper import WebScraper
 from convert_to_csv import convert_json_to_csv
+
+def generate_filename_from_url(url: str) -> str:
+    """
+    Generate a filename from a Commtrex URL containing state and city information.
+    
+    Args:
+        url (str): URL in format https://www.commtrex.com/transloading/{state}/{city}.html
+    
+    Returns:
+        str: Filename in format {state}_{city}_{timestamp}
+    """
+    match = re.search(r'/transloading/([^/]+)/([^/]+)\.html', url)
+    if not match:
+        # fallback if pattern is missing
+        return f"output_{int(time.time())}"
+    state, city = match.groups()
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    return f"{state}_{city}_{timestamp}"
 
 # Configure logging
 logging.basicConfig(
@@ -72,13 +91,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Web scraper with protection bypass capabilities')
     parser.add_argument('--url', type=str, nargs='+', required=True,
                       help='One or more URLs to scrape (space separated)')
-    parser.add_argument('--output', type=str, default='output',
-                      help='Base name for output files (without extension)')
     args = parser.parse_args()
     
     success_count = 0
-    for idx, url in enumerate(args.url, 1):
-        output_base = f"{args.output}_{idx}" if len(args.url) > 1 else args.output
+    for url in args.url:
+        output_base = generate_filename_from_url(url)
         if scrape_url(url, output_base):
             success_count += 1
     
