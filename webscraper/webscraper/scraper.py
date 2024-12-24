@@ -3,7 +3,7 @@ import logging
 import time
 
 class WebScraper:
-    def __init__(self):
+    def __init__(self, protection_strategy='auto'):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         # Add console handler if not already present
@@ -11,6 +11,7 @@ class WebScraper:
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             self.logger.addHandler(handler)
+        self.protection_strategy = protection_strategy
         self._setup_browser()
 
     def _setup_browser(self):
@@ -65,8 +66,14 @@ class WebScraper:
             }
         )
 
-    def scrape_url(self, url):
-        """Scrape a URL and return the content"""
+    def scrape_url(self, url, test_mode=False):
+        """
+        Scrape a URL and return the content
+        
+        Args:
+            url (str): URL to scrape
+            test_mode (bool): If True, only scrape one facility for testing
+        """
         page = None
         start_time = time.time()
         self.logger.debug(f"Starting scrape of {url}")
@@ -149,7 +156,9 @@ class WebScraper:
                 const facilityContainers = document.querySelectorAll('.list-item-container');
                 console.log(`Found ${facilityContainers.length} facility containers`);
                 
-                const facilities = Array.from(facilityContainers).map(container => {
+                // In test mode, only process the first facility
+                const containersToProcess = test_mode ? [facilityContainers[0]] : facilityContainers;
+                const facilities = Array.from(containersToProcess).map(container => {
                     // Extract facility name from list-title
                     const nameElement = container.querySelector('a.list-title');
                     const name = nameElement ? nameElement.textContent.trim() : '';
@@ -194,11 +203,14 @@ class WebScraper:
                     title: document.title,
                     facilities: facilities
                 };
-            }""")
+            }""", test_mode)
             
             if not data or 'facilities' not in data:
                 self.logger.error("No facilities data found in page")
                 raise ValueError("No facilities data found in page")
+            
+            if test_mode:
+                self.logger.info("Running in test mode - limited to one facility")
 
             self.logger.debug(f"Found {len(data.get('facilities', []))} facilities")
             return {

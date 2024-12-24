@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def scrape_url(url, output_base='output'):
+def scrape_url(url, output_base='output', test_mode=False, retry_count=3, protection_strategy='auto'):
     """
     Scrape a single URL and save the results to JSON and CSV files.
     
@@ -24,8 +24,20 @@ def scrape_url(url, output_base='output'):
     logger.info(f"Processing URL: {url}")
     
     try:
-        scraper = WebScraper()
-        result = scraper.scrape_url(url)
+        scraper = WebScraper(protection_strategy=protection_strategy)
+        result = None
+        
+        for attempt in range(retry_count):
+            try:
+                logger.info(f"Attempt {attempt + 1}/{retry_count}")
+                result = scraper.scrape_url(url, test_mode=test_mode)
+                if result:
+                    break
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt < retry_count - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                continue
         
         if result:
             # Save results to JSON
@@ -74,12 +86,18 @@ if __name__ == '__main__':
                       help='One or more URLs to scrape (space separated)')
     parser.add_argument('--output', type=str, default='output',
                       help='Base name for output files (without extension)')
+    parser.add_argument('--test-mode', action='store_true',
+                      help='Run in test mode (only scrape one facility)')
+    parser.add_argument('--retry-count', type=int, default=3,
+                      help='Number of retries for failed requests')
+    parser.add_argument('--protection-strategy', type=str, choices=['auto', 'cloudscraper', 'playwright'],
+                      default='auto', help='Protection bypass strategy to use')
     args = parser.parse_args()
     
     success_count = 0
     for idx, url in enumerate(args.url, 1):
         output_base = f"{args.output}_{idx}" if len(args.url) > 1 else args.output
-        if scrape_url(url, output_base):
+        if scrape_url(url, output_base, args.test_mode, args.retry_count, args.protection_strategy):
             success_count += 1
     
     logger.info(f"Completed scraping {success_count}/{len(args.url)} URLs successfully")
