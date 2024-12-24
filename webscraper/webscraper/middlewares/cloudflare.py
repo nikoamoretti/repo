@@ -15,29 +15,32 @@ class CloudflareMiddleware(UserAgentMiddleware):
             self.logger.error("No Scraper API key found!")
             return None
             
-        # Skip if already processed (using meta flag)
-        if request.meta.get('scraperapi_processed'):
+        # Skip if already processed or if it's a ScraperAPI URL
+        if 'api.scraperapi.com' in request.url:
             return None
             
-        # Mark as processed
-        request.meta['scraperapi_processed'] = True
+        original_url = request.url
+        self.logger.debug(f"Processing URL: {original_url}")
         
-        # Use urlencode for proper URL encoding
+        # Build the API URL securely
         params = {
             'api_key': self.scraper_api_key,
-            'url': request.url,
-            'render_js': '1',
-            'keep_headers': 'true'
+            'url': original_url,
+            'render_js': '1'
         }
         
+        # Create new request to ScraperAPI
         api_url = f"http://api.scraperapi.com/?{urlencode(params)}"
-        self.logger.debug(f"Processing URL: {request.url}")
-        request._set_url(api_url)
         
-        # Set standard headers
+        # Update the request
+        request._set_url(api_url)
         request.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+        
+        # Store original URL for reference
+        request.meta['original_url'] = original_url
+        
         return None
 
     @classmethod

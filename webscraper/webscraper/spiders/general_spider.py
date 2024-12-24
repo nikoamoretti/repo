@@ -8,7 +8,6 @@ class GeneralSpiderSpider(scrapy.Spider):
     def __init__(self, url=None, *args, **kwargs):
         super(GeneralSpiderSpider, self).__init__(*args, **kwargs)
         self.start_urls = ["http://example.com"] if not url else [url]
-        self.logger = logging.getLogger(__name__)
     
     def start_requests(self):
         for url in self.start_urls:
@@ -17,8 +16,7 @@ class GeneralSpiderSpider(scrapy.Spider):
                 url=url,
                 callback=self.parse,
                 errback=self.errback,
-                dont_filter=True,
-                meta={'original_url': url}
+                dont_filter=True
             )
     
     def parse(self, response):
