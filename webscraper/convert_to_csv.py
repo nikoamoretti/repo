@@ -2,11 +2,14 @@ import json
 import csv
 import os
 
-def convert_json_to_csv():
-    # Read JSON file
-    with open('test_result.json', 'r') as json_file:
-        data = json.load(json_file)
+def convert_to_csv(data, output_file='facilities.csv'):
+    """
+    Convert facility data to CSV format
     
+    Args:
+        data (dict): Scraped facility data
+        output_file (str): Path to output CSV file
+    """
     # Prepare CSV headers
     headers = [
         'Facility Name',
@@ -25,7 +28,7 @@ def convert_json_to_csv():
         return ''
     
     # Create CSV file
-    with open('facilities.csv', 'w', newline='') as csv_file:
+    with open(output_file, 'w', newline='', encoding='utf-8') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(headers)
         

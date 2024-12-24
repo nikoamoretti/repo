@@ -10,21 +10,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def test_scraper():
+def scrape_url(url, output_base='output'):
+    """
+    Scrape URL and save results in both JSON and CSV formats
+    
+    Args:
+        url (str): URL to scrape
+        output_base (str): Base name for output files (without extension)
+    """
     start_time = time.time()
-    logger.info("Starting scraper test")
+    logger.info(f"Starting scraper for URL: {url}")
     
     try:
         scraper = WebScraper()
-        url = 'https://www.commtrex.com/transloading/ga/atlanta.html'
         
         logger.info(f"Testing URL: {url}")
         result = scraper.scrape_url(url)
         
         if result:
-            # Save results to file
-            with open('test_result.json', 'w') as f:
+            # Save results to JSON file
+            json_file = f"{output_base}.json"
+            with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump(result, f, indent=2)
+            logger.info(f"Data saved to {json_file}")
+            
+            # Convert to CSV
+            csv_file = f"{output_base}.csv"
+            from convert_to_csv import convert_to_csv
+            convert_to_csv(result, csv_file)
+            logger.info(f"Data converted and saved to {csv_file}")
             
             logger.info(f"Successfully scraped data in {time.time() - start_time:.2f} seconds")
             logger.info(f"Title: {result.get('title', 'N/A')}")
@@ -51,4 +65,11 @@ def test_scraper():
         logger.info(f"Total test time: {time.time() - start_time:.2f} seconds")
 
 if __name__ == '__main__':
-    test_scraper()
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Web scraper with protection bypass capabilities')
+    parser.add_argument('--url', type=str, required=True, help='URL to scrape')
+    parser.add_argument('--output', type=str, default='output', help='Base name for output files (without extension)')
+    args = parser.parse_args()
+    
+    scrape_url(args.url, args.output)
