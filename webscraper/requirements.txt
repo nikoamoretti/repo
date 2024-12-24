@@ -3,6 +3,9 @@ scrapy>=2.11.0
 playwright>=1.40.0
 cloudscraper>=1.2.71
 pandas>=2.1.4
+fastapi>=0.109.2
+uvicorn>=0.27.1
+python-multipart>=0.0.6
 requests>=2.31.0
 
 # JavaScript handling
