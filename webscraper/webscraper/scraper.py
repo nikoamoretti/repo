@@ -94,10 +94,10 @@ class WebScraper:
             # Enhanced protection bypass with multiple verification steps
             def wait_for_real_content():
                 try:
-                    # Wait for Cloudflare challenge to disappear
-                    page.wait_for_selector('body:not(:has-text("Just a moment"))', timeout=10000)
-                    page.wait_for_selector('body:not(:has-text("Please wait"))', timeout=5000)
-                    page.wait_for_selector('body:not(:has-text("DDoS protection"))', timeout=5000)
+                    # Wait for Cloudflare challenge to disappear (reduced timeouts)
+                    page.wait_for_selector('body:not(:has-text("Just a moment"))', timeout=2000)
+                    page.wait_for_selector('body:not(:has-text("Please wait"))', timeout=1000)
+                    page.wait_for_selector('body:not(:has-text("DDoS protection"))', timeout=1000)
                     
                     # Wait for actual content indicators
                     content_selectors = [
@@ -126,19 +126,11 @@ class WebScraper:
             if any(text in content for text in ["Just a moment", "Please wait", "DDoS protection"]):
                 self.logger.debug("Protection detected, implementing advanced bypass...")
                 
-                # Multiple retry attempts
-                for attempt in range(3):
-                    self.logger.debug(f"Bypass attempt {attempt + 1}")
-                    
-                    # Wait for challenge to complete and content to load
-                    if wait_for_real_content():
-                        self.logger.debug("Successfully bypassed protection")
-                        break
-                    
-                    # If still on challenge page, try refreshing
-                    if attempt < 2:  # Don't refresh on last attempt
-                        self.logger.debug("Refreshing page...")
-                        page.reload(wait_until='networkidle')
+                # Single attempt for initial testing
+                if wait_for_real_content():
+                    self.logger.debug("Successfully bypassed protection")
+                else:
+                    self.logger.debug("Could not bypass protection in time")
                 
                 # Final verification
                 page.wait_for_load_state('networkidle', timeout=5000)
@@ -149,7 +141,7 @@ class WebScraper:
             self.logger.debug(page.content())
             
             # Enhanced facility data extraction with exact selectors from page analysis
-            data = page.evaluate("""() => {
+            data = page.evaluate("""(test_mode) => {
                 console.log('Starting facility extraction...');
                 
                 // Get all facility containers
@@ -203,7 +195,7 @@ class WebScraper:
                     title: document.title,
                     facilities: facilities
                 };
-            }""", test_mode)
+            }""", arg=test_mode)
             
             if not data or 'facilities' not in data:
                 self.logger.error("No facilities data found in page")
