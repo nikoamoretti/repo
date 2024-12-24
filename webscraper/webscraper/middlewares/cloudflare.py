@@ -1,55 +1,54 @@
-from scrapy import signals
-from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
-import requests
 import logging
-import os
-from urllib.parse import urlencode
+from scrapy import signals
+from scrapy.http import HtmlResponse
+from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
+import cloudscraper
+from twisted.internet.error import TimeoutError
 
 class CloudflareMiddleware(UserAgentMiddleware):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.scraper_api_key = os.getenv('Scraper_API_Key')
-        
+        self.scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True
+            },
+            debug=True
+        )
+
     def process_request(self, request, spider):
-        if not self.scraper_api_key:
-            self.logger.error("No Scraper API key found!")
+        # Skip if already processed
+        if request.meta.get('cloudflare_processed'):
             return None
-            
-        # Skip if already processed or if it's a ScraperAPI URL
-        if 'api.scraperapi.com' in request.url:
+
+        self.logger.debug(f"Processing request through Cloudscraper: {request.url}")
+        try:
+            response = self.scraper.get(
+                request.url,
+                headers=dict(request.headers),
+                cookies=request.cookies,
+                timeout=30
+            )
+            # Mark as processed to avoid loops
+            request.meta['cloudflare_processed'] = True
+            return HtmlResponse(
+                url=request.url,
+                status=response.status_code,
+                headers=response.headers,
+                body=response.content,
+                encoding='utf-8',
+                request=request
+            )
+        except Exception as e:
+            self.logger.error(f"Cloudscraper error: {str(e)}")
             return None
-            
-        original_url = request.url
-        self.logger.debug(f"Processing URL: {original_url}")
-        
-        # Build the API URL securely
-        params = {
-            'api_key': self.scraper_api_key,
-            'url': original_url,
-            'render_js': '1',
-            'country_code': 'us'  # Add country code for better routing
-        }
-        
-        # Create new request to ScraperAPI using HTTPS
-        api_url = f"https://api.scraperapi.com/?{urlencode(params)}"
-        self.logger.debug(f"Using ScraperAPI endpoint (key length: {len(self.scraper_api_key)})")
-        
-        # Update the request
-        request._set_url(api_url)
-        request.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        })
-        
-        # Store original URL for reference
-        request.meta['original_url'] = original_url
-        
-        return None
 
     @classmethod
     def from_crawler(cls, crawler):
         middleware = cls()
         crawler.signals.connect(middleware.spider_opened, signal=signals.spider_opened)
         return middleware
-        
+
     def spider_opened(self, spider):
-        spider.logger.info('Scraper API middleware initialized for: %s' % spider.name)
+        spider.logger.info('Cloudscraper middleware initialized for: %s' % spider.name)
