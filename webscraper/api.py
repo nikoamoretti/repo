@@ -1,11 +1,23 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
 import subprocess
 import os
 
 app = FastAPI()
+
+# Mount static files directory
+@app.get("/downloads/{filename}")
+async def get_file(filename: str):
+    if not os.path.exists(filename):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(filename)
+
+# Serve static files
+app.mount("/downloads", StaticFiles(directory="."), name="downloads")
 
 # Enable CORS for our frontend
 app.add_middleware(
@@ -49,7 +61,7 @@ async def scrape_urls(request: ScrapeRequest):
         if not os.path.exists(csv_filename):
             raise HTTPException(status_code=500, detail="CSV file not generated")
             
-        return {"csvUrl": f"/downloads/{csv_filename}"}
+        return {"csvUrl": f"/downloads/{csv_filename}", "filename": csv_filename}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

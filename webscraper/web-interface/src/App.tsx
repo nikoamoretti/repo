@@ -35,8 +35,7 @@ function App() {
       const response = await fetch('https://web-scraper-tool-tunnel-1fgpvxu9.devinapps.com/api/scrape', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + btoa('user:faaea8c141c3b427ca040f3edf57c805'),
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           urls: urlList,
@@ -59,7 +58,12 @@ function App() {
 
   const handleDownload = () => {
     if (downloadUrl) {
-      window.location.href = `http://localhost:8000${downloadUrl}`
+      const a = document.createElement('a');
+      a.href = `https://web-scraper-tool-tunnel-1fgpvxu9.devinapps.com${downloadUrl}`;
+      a.download = filename + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   }
 
