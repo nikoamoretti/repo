@@ -2,9 +2,16 @@ import json
 import csv
 import os
 
-def convert_json_to_csv():
+def convert_json_to_csv(input_json, output_csv):
+    """
+    Convert facility data from JSON to CSV format.
+    
+    Args:
+        input_json (str): Path to input JSON file
+        output_csv (str): Path to output CSV file
+    """
     # Read JSON file
-    with open('test_result.json', 'r') as json_file:
+    with open(input_json, 'r') as json_file:
         data = json.load(json_file)
     
     # Prepare CSV headers
@@ -25,7 +32,7 @@ def convert_json_to_csv():
         return ''
     
     # Create CSV file
-    with open('facilities.csv', 'w', newline='') as csv_file:
+    with open(output_csv, 'w', newline='', encoding='utf-8') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(headers)
         
@@ -48,5 +55,11 @@ def convert_json_to_csv():
             ])
 
 if __name__ == '__main__':
-    convert_json_to_csv()
-    print("Conversion completed. Output saved to facilities.csv")
+    import argparse
+    parser = argparse.ArgumentParser(description='Convert facility data from JSON to CSV')
+    parser.add_argument('--input', type=str, required=True, help='Input JSON file')
+    parser.add_argument('--output', type=str, required=True, help='Output CSV file')
+    args = parser.parse_args()
+    
+    convert_json_to_csv(args.input, args.output)
+    print(f"Conversion completed. Output saved to {args.output}")
