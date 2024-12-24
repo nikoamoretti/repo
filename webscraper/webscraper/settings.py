@@ -38,7 +38,8 @@ RETRY_TIMES = 3
 RETRY_HTTP_CODES = [401, 403, 429, 500, 502, 503, 504]
 
 # Configure request settings
-DOWNLOAD_TIMEOUT = 30
+DOWNLOAD_TIMEOUT = 90
+DOWNLOAD_MAXSIZE = 0  # Disable size limit for responses
 
 # Allow processing all status codes for better error handling
 HTTPERROR_ALLOW_ALL = True
