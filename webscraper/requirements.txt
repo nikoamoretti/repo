@@ -1,0 +1,20 @@
+# Core dependencies
+scrapy>=2.11.0
+playwright>=1.40.0
+cloudscraper>=1.2.71
+pandas>=2.1.4
+requests>=2.31.0
+
+# JavaScript handling
+js2py>=0.74
+pyparsing>=3.1.1
+
+# Browser automation
+selenium>=4.16.0
+
+# Data processing
+requests-toolbelt>=1.0.0
+itemadapter>=0.8.0
+
+# Utility packages
+urllib3>=2.1.0

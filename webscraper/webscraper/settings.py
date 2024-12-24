@@ -7,6 +7,13 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import logging
+
+# Configure logging
+logging.getLogger('scrapy').setLevel(logging.DEBUG)
+logging.getLogger('playwright').setLevel(logging.DEBUG)
+logging.getLogger('webscraper').setLevel(logging.DEBUG)
+
 BOT_NAME = "webscraper"
 
 SPIDER_MODULES = ["webscraper.spiders"]
@@ -29,7 +36,7 @@ CONCURRENT_REQUESTS = 8
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
-    'webscraper.middlewares.cloudflare.CloudflareMiddleware': 100,
+    'webscraper.middlewares.playwright_middleware.PlaywrightMiddleware': 100,
 }
 
 # Configure retry settings
