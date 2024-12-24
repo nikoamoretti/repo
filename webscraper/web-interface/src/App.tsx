@@ -32,7 +32,7 @@ function App() {
         throw new Error('No valid URLs found')
       }
 
-      const response = await fetch('https://user:faaea8c141c3b427ca040f3edf57c805@web-scraper-tool-tunnel-1fgpvxu9.devinapps.com/api/scrape', {
+      const response = await fetch('https://web-scraper-tool-tunnel-1fgpvxu9.devinapps.com/api/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
