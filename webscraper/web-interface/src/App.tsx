@@ -36,6 +36,7 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa('user:faaea8c141c3b427ca040f3edf57c805'),
         },
         body: JSON.stringify({
           urls: urlList,
